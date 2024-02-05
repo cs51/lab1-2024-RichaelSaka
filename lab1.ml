@@ -117,7 +117,7 @@ correspond to. Check it with a member of the course staff.
 
 
 
-      -
+  (*    -
       ^
      / \
     /   \
