@@ -51,7 +51,7 @@ replace the `failwith` expression below with the integer `42`, so that
 you submit, the Exercise 2 unit test should then pass.
 ......................................................................*)
 
-let exercise2 () = failwith "exercise2 not implemented" ;;
+let exercise2 () = 42 ;;
 
 (* From here on, you'll want to test your lab solutions locally before
 submitting them at the end of lab to Gradescope. A simple way to do that
@@ -108,7 +108,7 @@ expression with the appropriate OCaml expression to assign the value
 to the variable `exercise3` below.
 ......................................................................*)
 
-let exercise3 () : int = failwith "exercise3 not implemented" ;;
+let exercise3 () : int = ~- (5 - 3) ;;
 
 (* Hint: The OCaml concrete expression `~- 5 - 3` does *not*
 correspond to the abstract syntax above.
@@ -117,7 +117,17 @@ correspond to the abstract syntax above.
 Exercise 4: Draw the tree that the concrete syntax `~- 5 - 3` does
 correspond to. Check it with a member of the course staff.
 ......................................................................*)
+ (*
+      -
+      ^
+     / \
+    /   \
+   ~-    3
+   |
+   |
+   5
 
+ *)
 
 (*......................................................................
 Exercise 5: Associativity plays a role in cases when two operators
@@ -141,6 +151,11 @@ the operator. Check your answer with a member of the course staff if
 you'd like.
 ......................................................................*)
 
+ (*  # (3 - 2) - 1 ;;
+   - : int = 0
+   # 3 - (2 - 1) ;;
+   - : int = 2
+*)
 (*======================================================================
 Part 2: Types and type inference
 
@@ -151,24 +166,23 @@ expressions below? Test your solution by uncommenting the examples
 typing error is generated.
 ......................................................................*)
 
-(* <--- After you've replaced the ???s, remove this start-comment line
 
-let exercise6a : ??? = 42 ;;
+let exercise6a : int = 42 ;;
 
-let exercise6b : ??? =
+let exercise6b : string =
   let greet y = "Hello " ^ y
   in greet "World!";;
 
-let exercise6c : ??? =
+let exercise6c : float -> float  =
   fun x -> x +. 11.1 ;;
 
-let exercise6d : ??? =
+let exercise6d : int -> bool =
   fun x -> x < x + 1 ;;
 
-let exercise6e : ??? =
+let exercise6e : int -> float -> int =
   fun x -> fun y -> x + int_of_float y ;;
 
-and remove this whole end-comment line too. ----> *)
+
 
 (*======================================================================
 Part 3: First-order functional programming
@@ -205,9 +219,11 @@ some practice with automated unit testing.
 ......................................................................*)
 
 let square (x : int) : int  =
-  failwith "square not implemented" ;;
+  x * x ;;
 
-let exercise7 = 0 ;;
+let exercise7 =
+  square 5 ;;
+
 
 (*......................................................................
 Exercise 8: Define a function, `exclaim`, that, given a string,
@@ -224,7 +240,7 @@ example, you should get the following behavior:
 ......................................................................*)
 
 let exclaim (text : string) : string =
-  failwith "exclaim not implemented";;
+  (String.capitalize_ascii text) ^ "!" ;;
 
 (*......................................................................
 Exercise 9: Define a function, `small_bills`, that determines, given a
@@ -246,7 +262,8 @@ assume all prices given are non-negative.
 ......................................................................*)
 
 let small_bills (price : int) : bool =
-  failwith "small_bills not implemented" ;;
+  let cutoff_size = 20 in
+  (price mod cutoff_size) <> 0 ;;
 
 (*......................................................................
 Exercise 10:
@@ -271,11 +288,26 @@ that:
    # computus_day 2018 ;;
    - : int = 1
 ......................................................................*)
+let computus_common (year : int) : int =
+  let a = year mod 19 in
+  let b = year / 100 in
+  let c = year mod 100 in
+  let d = b / 4 in
+  let e = b mod 4 in
+  let f = (b + 8) / 25 in
+  let g = (b - f + 1) / 3 in
+  let h = (19 * a + b - d - g + 15) mod 30 in
+  let i = c / 4 in
+  let k = c mod 4 in
+  let l = (32 + 2 * e + 2 * i - h - k) mod 7 in
+  let m = (a + 11 * h + 22 * l) / 451 in
+  h + l - 7 * m + 114 ;;
 
 let computus_month (year : int) : int =
-  failwith "computus_month not implemented" ;;
-let computus_day (year : int) : int =
-  failwith "computus_day not implemented" ;;
+  (computus_common year) / 31 ;;
+
+let computus_day (year : int) =
+  (computus_common year) mod 31 + 1 ;
 
 (*======================================================================
 Part 4: Code review
@@ -333,8 +365,12 @@ the header line given at <https://url.cs51.io/frustrum>.
      because we'll be unit testing it. (The two lines we provide are
      just to allow the unit tests to have something to compile
      against. You'll want to just delete them and start over.) ***)
-let frustrum_volume _ _ _ =
-  failwith "frustrum_volume not implemented" ;;
+let frustrum_volume (radius1 : float)
+                    (radius2 : float)
+                    (height : float)
+                  : float =
+  (Float.pi *. height /. 3.)
+  *. (radius1 ** 2. +. radius1 *. radius2 +. radius2 ** 2.) ;;
 (*======================================================================
 Part 5: Utilizing recursion
 
@@ -355,8 +391,9 @@ For example,
    - : int = 1
 ......................................................................*)
 
-let factorial (x : int) : int =
-  failwith "factorial not implementated" ;;
+let rec factorial (x : int) =
+  if x = 0 then 1
+  else x * factorial (x - 1) ;;
 
 (*......................................................................
 Exercise 14: Define a recursive function `sum_from_zero` that sums all
@@ -373,6 +410,7 @@ the integers between 0 and its argument, inclusive.
 the mathematician Carl Friedrich Gauss as a seven-year-old, *in his
 head*!)
 ......................................................................*)
-
-let sum_from_zero (x : int) : int =
-  failwith "sum_from_zero not implemented" ;;
+let rec sum_from_zero (x : int) : int =
+  if x = 0 then 0
+  else if x < 0 then x + sum_from_zero (succ x)
+  else x + sum_from_zero (pred x) ;;
