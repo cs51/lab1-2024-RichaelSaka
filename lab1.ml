@@ -1,428 +1,577 @@
-(*
-                              CS51 Lab 1
-                     Basic Functional Programming
- *)
-
-(* Objective:
-
-This lab is intended to get you up and running with the course's
-assignment submission system, and thinking about core concepts
-introduced in class, including:
-
-    * concrete versus abstract syntax
-    * atomic types
-    * first-order functional programming
- *)
-
-(*======================================================================
-Part 0: Testing your Gradescope Interaction
-
-Labs and problem sets in CS51 are submitted using the Gradescope
-system. By now, you should be set up with Gradescope.
-
-........................................................................
-Exercise 1: To make sure that the setup works, submit this file,
-just as is, under the filename "lab1.ml", to the Lab 1 assignment on
-the CS51 Gradescope web site.
-........................................................................
-
-When you submit labs (including this one) Gradescope will check that
-the submission compiles cleanly, and if so, will run a set of unit
-tests on the submission. For this part 0 submission, the submission
-should compile cleanly, but most of the unit tests will fail (as you
-haven't done the exercises yet). But that's okay. We won't be checking
-the correctness of your labs until the "virtual quiz" this
-weekend. See the syllabus for more information about virtual quizzes,
-our very low stakes method for grading labs.
-
-Now let's get back to doing the remaining exercises so that more of
-the unit tests pass.
-
-     *******************************************************************
-     We use the commenting convention in our code throughout the
-     course that code snippets within comments are demarcated with
-     backquotes, for instance, `x + 3` or `fun x -> x`. You can think
-     of this as corresponding to the fixed-width font in the textbook.
-     *******************************************************************
-
-........................................................................
-Exercise 2: So that you can see how the unit tests in labs work,
-replace the `failwith` expression below with the integer `42`, so that
-`exercise2` is a function that returns `42` (instead of failing). When
-you submit, the Exercise 2 unit test should then pass.
-......................................................................*)
-
-let exercise2 () = 42 ;;
-
-(* From here on, you'll want to test your lab solutions locally before
-submitting them at the end of lab to Gradescope. A simple way to do that
-is to cut and paste the exercises into an OCaml interpreter, such as
-utop, which you run with the command
-
-    % utop
-
-You can also use the more basic version, ocaml:
-
-    % ocaml
-
-We call this kind of interaction a "read-eval-print loop" or
-"REPL". Alternatively, you can feed the whole file to OCaml with the
-command:
-
-    % ocaml < lab1.ml
-
-to see what happens. We'll introduce other methods soon. *)
-
-(*======================================================================
-Part 1: Concrete versus abstract syntax
-
-We've distinguished concrete from abstract syntax. Abstract syntax
-corresponds to the substantive tree structuring of expressions;
-concrete syntax corresponds to the particulars of how those structures
-are made manifest in the language's textual notation.
-
-In the presence of multiple operators, issues of precedence and
-associativity become important in constructing the abstract syntax
-from the concrete syntax.
-
-........................................................................
-Exercise 3: Consider the following abstract syntax tree:
-
-     ~-
-      |
-      |
-      -
-      ^
-     / \
-    /   \
-   5     3
-
-
-
-How might this *abstract* syntax be expressed in the *concrete* syntax
-of OCaml using the fewest parentheses? Replace the `failwith`
-expression with the appropriate OCaml expression to assign the value
-to the variable `exercise3` below.
-......................................................................*)
-
-let exercise3 () : int = ~- (5 - 3) ;;
-
-(* Hint: The OCaml concrete expression `~- 5 - 3` does *not*
-correspond to the abstract syntax above.
-
-........................................................................
-Exercise 4: Draw the tree that the concrete syntax `~- 5 - 3` does
-correspond to. Check it with a member of the course staff.
-......................................................................*)
-
-
-
-  (*    -
-      ^
-     / \
-    /   \
-   ~-    3
-   |
-   |
-   5
-
- *)
-
-(*......................................................................
-Exercise 5: Associativity plays a role in cases when two operators
-used in the concrete syntax have the same precedence. For instance,
-the concrete expression `2 + 1 + 0` might have abstract syntax as
-reflected in the following two parenthesizations:
-
-    2 + (1 + 0)
-
-or
-
-    (2 + 1) + 0
-
-As it turns out, both of these parenthesizations evaluate to the same
-result (`3`). (That's because addition is an associative operation.)
-
-Construct an expression that uses an arithmetic operator twice, but
-evaluates to two different results dependent on the associativity of
-the operator. Use this expression to determine the associativity of
-the operator. Check your answer with a member of the course staff if
-you'd like.
-......................................................................*)
-
 (* 
+                         CS 51 Problem Set 1
+                        The Prisoners' Dilemma
+ *)
 
-   # (3 - 2) - 1 ;;
-   - : int = 0
-   # 3 - (2 - 1) ;;
-   - : int = 2
+(* Before reading this code (or in tandem), read the problem set 1
+writeup in the `readme.pdf` file that came along with the problem
+set. It provides context and crucial information for completing the
+problems. In addition, make sure that you are familiar with the
+problem set procedures in the document "Problem set procedures for
+CS51" <https://url.cs51.io/pset-procedures>. *)
+
+(*======================================================================
+Part 1 - Practice with simple functions
+
+We start with writing a few simple functions as a warm up. These
+functions perform simple manipulations over lists, strings, numbers,
+and booleans. (Some of them may also be useful later in part 2 in
+implementing the iterated prisoner's dilemma.)
+
+  ----------------------------------------------------------------------
+  Before proceeding further, please read the document "Problem set
+  procedures for CS51". The following recommendations supplement those
+  notes.
+
+  * For each subproblem, you will implement a given function, and
+    provide appropriate unit tests in the accompanying file
+    `pset1_tests.ml`. You are provided a high level description as well
+    as a type signature of the function you must implement. 
+
+  * Give the functions the names listed in the comments, as they must
+    be named as specified in order to compile against our automated
+    unit tests.
+
+  * Keep in mind the CS51 style guide and what you've learned so far
+    about code quality and elegance. 
+
+  * The best way to learn about the core language is to work directly
+    with the core language features. Consequently, you should *not*
+    use any library functions (for instance, those in the `List`
+    module) in implementing your solutions to this problem set.
+
+  * We recommend that you specify your unit tests for a function
+    _before_ working on writing the function. This development cycle
+    --
+
+        (i) Understand the function requirements
+       (ii) Create unit tests
+      (iii) Implement the function 
+
+    _in that order_ -- is highly recommended for all future work in
+    this course and beyond. Following such a development cycle will
+    give you a clearer idea of what it is you'll be implementing, and
+    helps improve your understanding of the task at hand before
+    getting deep into the code, and will hopefully minimize bugs and
+    headaches. Unit tests should be your first activity, not an
+    afterthought.
+
+    As an example, we've already provided some unit tests in
+    `pset1_tests.ml` for the `nonincreasing` function. (Of course, you
+    should feel free to add more.)
+
+  * In these problem sets and in the labs as well, we'll often supply
+    some skeleton code for functions that you are to write.
+    Typically, that "stub" code merely raises an exception noting that
+    the function has not yet been written -- something like
+
+      let merge =
+        fun _ -> failwith "merge not implemented" ;;
+
+    (The `failwith` function will be explained later in the
+    course. For the time being, you can treat this as a fixed idiom.)
+
+    You'll want to replace these stubs with a correct implementation
+    of the function. Other parts of the assignment may have you
+    perform other tasks to check your understanding of the material.
+
+  * Often, the skeleton code is written to give you an idea of the
+    function's intended name and its signature (its type, including
+    its arguments and their types, and the return type), for instance,
+
+        let somefunction (arg1 : type) (arg2 : type) : returntype =
+          failwith "somefunction not implemented"
+
+    This stub code indicates that `somefunction` takes two arguments
+    of the indicated types and returns a value of the indicated return
+    type. But there's no need to slavishly follow that particular way
+    of *implementing* the function to those specifications. In
+    particular, you may want to modify the first line to introduce,
+    say, a `rec` keyword (if your function is to be recursive):
+
+        let rec somefunction (arg1 : type) (arg2 : type) : returntype =
+          ...your further code here...
+
+    Or you might want to define the function using anonymous function
+    syntax:
+
+        let somefunction =
+          fun (arg1 : type) (arg2 : type) : returntype ->
+            ...your further code here...
+
+    In short, you can and should write these function definitions in
+    as idiomatic a form as possible, regardless of how the stub code
+    has been organized.
+    ------------------------------------------------------------------*)
+
+(*......................................................................
+Problem 1a: Write a function `nonincreasing` that takes a list of
+integers and returns `true` if and only if the list is in
+nonincreasing order. The empty list is considered to be nonincreasing
+in this sense. Consecutive elements of the same value are allowed in a
+nonincreasing list.
+
+For example:
+
+    # nonincreasing [1; 2; 3] ;;
+    - : bool = false
+    # nonincreasing [1; 2; 1; 2] ;;
+    - : bool = false
+    # nonincreasing [3; 2; 1] ;;
+    - : bool = true
+    # nonincreasing [5; 2; 2; 2; 1; 1] ;;
+    - : bool = true
+
+Here is the function's signature: 
+
+    nonincreasing : int list -> bool
+
+Start by writing a full set of unit tests in `ps1_tests.ml` (but we've
+done that for you for this problem). Try to cover both typical cases
+and "edge cases". Once you have a good set of unit tests, replace the
+stub below with your own definition of `nonincreasing`. (Recall the
+"important notes" above.) Then compile and run the tests to check that
+your function works, before moving on to the next problem.
+......................................................................*)
+
+let rec nonincreasing (lst: int list) : bool =
+  match lst with
+  | [] -> true (*an empty list is considered non-increasing*)
+  | [_] -> true (*a sigle element is also considered non-increasing*)
+  | x :: y :: tail -> x >= y && nonincreasing (y :: tail) ;;
+
+
+(*......................................................................
+Problem 1b: Write a function `merge` that takes two integer lists, each
+*sorted* in nondecreasing order, and returns a single merged list in
+sorted order. For example:
+
+    # merge [1; 3; 5] [2; 4; 6] ;; 
+    - : int list = [1; 2; 3; 4; 5; 6]
+    # merge [1; 2; 5] [2; 4; 6] ;;
+    - : int list = [1; 2; 2; 4; 5; 6]
+    # merge [1; 3; 5] [2; 4; 6; 12] ;;
+    - : int list = [1; 2; 3; 4; 5; 6; 12]
+    # merge [1; 3; 5; 700; 702] [2; 4; 6; 12] ;;
+    - : int list = [1; 2; 3; 4; 5; 6; 12; 700; 702]
+
+Here is its type signature:
+
+    merge : int list -> int list -> int list
+
+As before, you should first provide unit tests, and then work on
+writing the function. Replace the stub below with your own definition
+of `merge`.
+......................................................................*)
+
+let rec merge (list1: int list) (list2: int list) : int list =
+  match (list1, list2) with
+  |  _, [] -> list1 (*if the second list is empty return the first list*)
+  | [], _ -> list2 (*if the first list is empty, return the second list*)
+  | list1_head :: list1_tail, list2_head :: list2_tail ->  
+    if list1_head >= list2_head then list2_head :: merge list1 list2_tail
+    else list1_head :: merge list2 list1_tail ;;
+    (*otherwise, if the first element of the first array is smaller,
+     we want that element to come first then we call the merge function 
+    on the second array and the rest of the second array*)
+    
+
+(*......................................................................
+Problem 1c: The function `unzip`, given a list of boolean pairs,
+returns a pair of lists, the first of which contains each first
+element of each pair, and the second of which contains each second
+element. The returned list should have elements in the order in which
+they were provided. For example:
+
+    # unzip [(true, false); (false, false); (true, false)] ;;
+    - : bool list * bool list = ([true; false; true], [false; false; false])
+
+Here is its signature:
+
+    unzip : (bool * bool) list -> bool list * bool list)
+
+As before, you should first provide unit tests, and then work on
+writing the function. (We'll stop reminding you about writing the unit
+tests first, not because it's not important but because it ought to go
+without saying.) Replace the stub below with your own definition of
+`unzip`.
+......................................................................*)
+
+let rec unzip (lst : (bool * bool) list) : bool list * bool list =
+  match lst with
+  | [] -> [], [] (*if we're given an empty array, return two empty arrays*)
+  | (x, y) :: t -> let t1, t2 = unzip t in 
+    (*Recursively call unzip on the rest of the list (t), 
+     storing the results in t1 and t2*)
+      (x :: t1, y :: t2) ;;
+
+
+(*......................................................................
+Problem 1d: One way to compress a list of characters is to use
+run-length encoding. The basic idea is that whenever we have repeated
+characters in a list such as
+
+  ['a'; 'a'; 'a'; 'a'; 'a'; 'b'; 'b'; 'b'; 'a'; 'd'; 'd'; 'd'; 'd'] 
+
+we can represent the same information more compactly (usually) as a
+list of pairs like 
+
+  [(5, 'a'); (3, 'b'); (1, 'a'); (4, 'd')]      . 
+
+Here, the numbers represent how many times the character is
+repeated. For example, the first character in the string is 'a' and it
+is repeated 5 times in a row, followed by 3 occurrences of the
+character 'b', followed by 1 more 'a', and finally 4 copies of 'd'.
+
+Write a function `to_run_length` that converts a list of characters
+into the run-length encoding and a function `from_run_length` that
+converts back. Writing both functions will make it easier to test that
+you've gotten them right.
+
+Here are their signatures:
+
+  to_run_length : char list -> (int * char) list
+  from_run_length : (int * char) list -> char list
+
+Replace the stubs below with your own definitions of `to_run_length`
+and `from_run_length`. We recommend that you write `from_run_length`
+first, and then `to_run_length`.
+......................................................................*)
+
+let rec from_run_length (lst : (int * char) list) : char list =
+  match lst with 
+  | [] -> []
+  | (num, letter) :: t -> (* getting the first element and the tail *)
+    if num < 1 then from_run_length t (* if num is < 1 skip to next element *)
+    else letter :: (from_run_length ((num - 1, letter) :: t)) ;;
+    (* calling the the function on the num - 1 and the tail *)
+
+let rec to_run_length (lst : char list): (int * char) list =
+  match lst with
+  | [] -> []
+  (* Recursively encode the tail of the list *)
+  | head :: tail1 -> match to_run_length tail1 with 
+    (* If the tail is empty, return the head with a count of 1 *)
+    | [] -> [(1, head)] 
+    (* If the tail is not empty, compare the head with the next element *)
+    | (count, letter) :: tail2 -> 
+      (* If the head matches the letter, increment the count *)
+      if head = letter then (count + 1, letter) :: tail2
+      (* Otherwise, add a new tuple for the head and continue encoding *)
+      else (1, head) :: to_run_length tail1 ;;
+ 
+
+(*======================================================================
+Part 2 - Prisoner's Dilemma
+
+In the remainder of this problem set, you will be implementing a version
+of the iterated prisoner's dilemma in OCaml.
+
+We represent an action as a boolean. The boolean value `true` represents 
+a cooperation action, and the boolean value `false` represents a defection 
+action, which we codify in some constant definitions. 
+
+We represent a `play`, that is, one round of the prisoner's dilemma, as
+a boolean tuple, where the first element represents your action and
+the second element represents the other player's action. *)
+
+type action = bool ;; 
+
+let cCOOPERATE = true ;;
+let cDEFECT = false ;;
+
+type play = action * action ;; 
+
+(* A payoff matrix will be represented as an association list, a list of
+key-value pairs. the first entry of the tuple is a `play`, and the
+second entry of the tuple is an `int * int` tuple, representing the
+payoff to each player. The first element of the payoff is your payoff,
+and the second element is the other player's payoff.
+
+We will represent a history of actions using a play list. The head of
+the list is the most recent round's actions. *)
+                     
+type payoff_matrix = (play * (int * int)) list
+
+(* Note: Do *not* modify this matrix. *)
+
+let test_payoff_matrix : payoff_matrix = 
+  [ ( (cCOOPERATE, cCOOPERATE), (3, 3)  );
+    ( (cCOOPERATE, cDEFECT),    (-2, 5) );
+    ( (cDEFECT,    cCOOPERATE), (5, -2) );
+    ( (cDEFECT,    cDEFECT),    (0, 0)  ) ] ;;
+
+(*......................................................................
+Problem 2a: Write a function `extract_entry` that given a `play` and a
+`payoff_matrix` as input, returns the payoff for the given play. If
+the play is not found in the payoff matrix, return a default tuple
+value of (404, 404). (We'll introduce much better ways of signaling
+error conditions later, as described in Chapter 10.)
+
+Here is its signature:
+
+    extract_entry : play -> payoff_matrix -> int * int
+
+Replace the stub below with your own definition of `extract_entry`.
+......................................................................*)
+ 
+let rec extract_entry (round : play) (payoff : payoff_matrix) : int * int =
+  match payoff with 
+  | [] -> (404, 404) (* Base case: if array is empty return error pair*)
+    (*else, if the current round matches the search, 
+     return the correspoinding payoff*)
+  | (player_action, payoff) :: t -> if round = player_action then payoff
+    else extract_entry round t ;;
+
+(* We will represent a history of actions as a `play list`. The head
+of the list is the most recent round's actions.
+
+We also represent a strategy as a function from a history to an
+action, that is, a value of type `history -> action`.
+
+As an example, we define two basic strategies, `nasty` and `patsy`,
+which will ignore their inputs and always defect or cooperate,
+respectively. *)
+
+type history = play list
+type strategy = history -> action 
+
+let nasty : strategy = 
+  fun _ -> cDEFECT ;;
+
+let patsy : strategy = 
+  fun _ -> cCOOPERATE ;;
+
+(*......................................................................
+Problem 2b: The above strategies are not very sophisticated. Let us
+start working our way up to defining a more complex strategy. To do so,
+we will need to define two helper functions, `count_defections` and
+`count_cooperations`. These functions will take as input a history, and
+return a tuple containing the number of defections or cooperations that
+you and the other player made, respectively.
+
+Here are its signatures:
+
+  count_defections : history -> int * int
+  count_cooperations : history -> int * int
+
+Replace the stubs below with your own definitions of `count_defections`
+and `count_cooperations`. Try your best to reduce code duplication!
+......................................................................*)
+
+(* helper function to check if a player choice matches a given action *)
+let increment_if_matches (player_choice : action) (action : action) : int =
+  if player_choice = action then 1 else 0 ;;
+  
+
+let rec count_defections (past : history) : int * int = 
+  match past with 
+  | [] -> (0, 0) (* base case: if empty array return zeroes for count*)
+    (* recursively check the rest of the array and increment accordingly*)
+  | (p1, p2) :: t -> let (p1_defect, p2_defect) = count_defections t in
+      (p1_defect + increment_if_matches p1 cDEFECT,
+      p2_defect + increment_if_matches p2 cDEFECT);;
+    
+
+
+let rec count_cooperations (past : history) : int * int = 
+  match past with 
+  | [] -> (0, 0) (* base case: if empty array return zeroes for count *)
+  (* recursively check the rest of the array and increment accordingly*)
+  | (p1, p2) :: t -> let (p1_coop, p2_coop) = count_cooperations t in
+      (p1_coop + increment_if_matches p1 cCOOPERATE,
+      p2_coop + increment_if_matches p2 cDEFECT) ;; 
+
+(*......................................................................
+Problem 2c: Define a balanced strategy. This strategy cooperates on the
+first round, and then does the opposite action of its previous round's
+action for every subsequent round. Recall that a `strategy` is actually a
+function of type `history -> action`.
+......................................................................*)
+
+let balanced (previous : history) : action =
+  match previous with
+  | [] -> cCOOPERATE (* If no previous history, cooperate in the first round *)
+  (* Look at the most recent round's action and decide the next action. *)
+  | (x, _) :: _ -> if x = cDEFECT then cCOOPERATE else cDEFECT ;;
+  
+
+(*......................................................................
+Problem 2d: Define an egalitarian strategy. This strategy cooperates
+on the first round. On all subsequent rounds, the egalitarian strategy
+examines the history of the other player's actions, counting the total
+number of defections of each player. If the other player's defections
+outnumber our defections, the strategy will defect; otherwise it will
+cooperate.
+......................................................................*)
+
+let egalitarian (previous : history) : action =
+  (* cooperate on the first action than calculate to 
+     determine whether to defect or cooperate *)
+  if previous = [] then cCOOPERATE else
+  let p1_defects, p2_defects = count_defections previous in 
+    if p2_defects > p1_defects then cDEFECT else cCOOPERATE ;;
+
+(*......................................................................
+Problem 2e: Define a tit-for-tat strategy. This strategy cooperates on
+the first round, and then on every subsequent round it mimics the other
+player's previous action.
+......................................................................*)
+
+let tit_for_tat (previous : history) : action =
+  match previous with
+  | [] -> cCOOPERATE  (* If there is no history, cooperate by default. *)
+  | (_, p2_action) :: _ -> p2_action ;;  (* Replicate opponent's last action. *)
+
+
+(*......................................................................
+Problem 2f: Now define your own strategy. Any strategy that compiles
+and is not the `failwith` stub will receive full credit. If you'd
+like, you can run this strategy in a round-robin tournament as
+described in the problem set writeup. You may assume that the
+tournament will use the payoff matrix defined by the original
+`test_payoff_matrix`.
+
+For this problem only, you may make use of the `Random` module if you
+would like to. See its documentation online at
+<https://caml.inria.fr/pub/docs/manual-ocaml/libref/Random.html>.
+
+If you want to enter your strategy in the tournament, give it a
+pseudonym as well. To maintain grading anonymity, please don't use
+your real name, and please use appropriate language in your pseudonym.
+......................................................................*)
+
+let my_strategy (previous : history) : action =
+  (* Just return a random action *)
+  if Random.bool () then cCOOPERATE else cDEFECT ;;
+
+  
+
+(* If you want to enter your strategy in the tournament, give it a
+pseudonym here. *)
+let my_pseudonym = "Random Strat" ;;
+
+(* In order to run a full iterated prisoner's dilemma, we need a few
+more auxiliary functions. You'll write these now. *)
+ 
+(*......................................................................
+Problem 2g: Write a function `swap_actions` that given a history
+returns a history where each tuple is swapped, though the order of
+rounds in the history should still be preserved. This function will be 
+necessary for running two strategies against each other later in this
+problem set. Here is its signature:
+
+    swap_actions : history -> history
+
+For example:
+
+    swap_actions [(cDEFECT, cCOOPERATE); (cCOOPERATE, cCOOPERATE)] 
+               = [(cCOOPERATE, cDEFECT); (cCOOPERATE, cCOOPERATE)] 
+......................................................................*)
+
+let rec swap_actions (past: history) : history = 
+  match past with
+  (* Base case: return an empty list for an empty history *)
+  | [] -> []
+  (* Swap actions and recurse on the tail *)
+  | (player1, player2) :: tail -> (player2, player1) :: swap_actions tail ;;
+     
+(*......................................................................
+Problem 2h: Write a function `calculate_payoff` that given a
+`payoff_matrix` and a history returns the total payoffs to you and
+the other
+ player generated by the given history. Here is its
+signature:
+       
+    calculate_payoff : payoff_matrix -> history -> int * int 
+......................................................................*)
+
+let rec calculate_payoff (payoff : payoff_matrix) (prev: history) : int * int = 
+  match prev with
+  | [] -> (0, 0)  (* Initial payoff for empty history. *)
+  | p :: rest ->
+    (* Recurse through history. *)
+    let (p1_pay, p2_pay) = calculate_payoff payoff rest in 
+    (* Payoff from current play. *) 
+    let (p1_gain, p2_gain) = extract_entry p payoff in  
+      (p1_pay + p1_gain, p2_pay + p2_gain) ;;  (* Update total payoff. *)
+
+    
+
+(* All the parts are now in place to run an iterated prisoners
+dilemma. We've provided a function below to do just that. Notice that
+it makes good use of your `calculate_payoff` and `swap_actions`
+functions. *)
+   
+(* play_strategies n payoff_matrix strat1 strat2 -- Plays strategies
+   `strat1` and `strat2` against each other for `n` rounds, returning
+   the cumulative payoffs for both strategies based on the provided
+   payoff_matrix`. *)
+let play_strategies (n : int)
+                    (payoff_matrix : payoff_matrix)
+                    (first_strat : strategy)
+                    (second_strat : strategy)
+                  : int * int =
+
+  (* extend_history past n -- Returns a history that starts with
+     `past` and extends it by `n` more plays. *)
+  let rec extend_history (past : history) (count : int) : history = 
+    if count = 0 then past 
+    else 
+      let first_action, second_action =
+        first_strat past, second_strat (swap_actions past) in
+      let new_history = (first_action, second_action) :: past in
+      extend_history new_history (count - 1) in
+  
+  calculate_payoff payoff_matrix (extend_history [] n) ;;
+
+(* Now we can test it out. We'll play Nasty versus Patsy for 100 rounds
+and print out the result. To see this, uncomment the single line below
+and then compile the file by running `make ps1` in your shell,
+followed by the command `./ps1.byte`. Feel free to try out other
+strategies by changing `first_strategy` and `second_strategy`
+below. But make sure to recomment that last line before submitting
+your problem set for grading. *)
+  
+let cROUNDS = 100 ;;
+let first_strategy = nasty ;;
+let second_strategy = patsy ;;
+
+let main () = 
+  let first_payoff, second_payoff =
+    play_strategies cROUNDS test_payoff_matrix first_strategy second_strategy 
+  in
+  Printf.printf "first payoff: %d, second payoff: %d\n"
+                first_payoff second_payoff ;;
+
+(* Uncomment this when finished
+let _ = main () ;;
  *)
 
 (*======================================================================
-Part 2: Types and type inference
+Reflection on the problem set
+
+After each problem set, we'll ask you to reflect on your experience.
+We care about your responses and will use them to help guide us in
+creating and improving future assignments.
 
 ........................................................................
-Exercise 6: What are appropriate types to replace the ??? in the
-expressions below? Test your solution by uncommenting the examples
-(removing the `(*` and `*)` at start and end) and verifying that no
-typing error is generated.
+Please give us an honest (if approximate) estimate of how long (in
+minutes) this problem set took you to complete. 
 ......................................................................*)
 
-let exercise6a : int = 42 ;;
-
-let exercise6b : string =
-  let greet y = "Hello " ^ y
-  in greet "World!";;
-
-
-
-let exercise6c : float -> float  =
-  fun x -> x +. 11.1 ;;
-
-let exercise6d : int -> bool =
-  fun x -> x < x + 1 ;;
-
-let exercise6e : int -> float -> int =
-  fun x -> fun y -> x + int_of_float y ;;
-
-
-(*======================================================================
-Part 3: First-order functional programming
-
-For warmup, here are some "finger exercises" defining simple functions
-before moving onto more complex problems.
-
-........................................................................
-Exercise 7: Define a function `square` that squares its
-argument. We've provided a bit of template code, supplying the first
-line of the function definition but the body of the skeleton code just
-causes a failure by forcing an error using the built-in failwith
-function. Edit the code to implement `square` properly.
-
-Test out your implementation of `square` by modifying the template
-code below to define `exercise7` to be the `square` function applied
-to the integer 5. You'll want to replace the `0` with the correct
-function call.
-
-Thorough testing is important in all your work, and we hope to impart
-this view to you in CS51. Testing will help you find bugs, avoid
-mistakes, and teach you the value of short, clear, testable
-functions. In the file `lab1_tests.ml`, we’ve put some prewritten
-tests for `square` using the testing method of Section 6.5 in the
-book. Spend some time understanding how the testing function works and
-why these tests are comprehensive. Then test your code by compiling
-and running the test suite:
-
-    % ocamlbuild -use-ocamlfind lab1_tests.byte
-    % ./lab1_tests.byte
-
-You may want to add some tests for other functions in the lab to get
-some practice with automated unit testing.
-......................................................................*)
-
-let square (x : int) : int  =
-  x * x ;;
-
-let exercise7 =
-  square 5 ;;
-
-(*......................................................................
-Exercise 8: Define a function, `exclaim`, that, given a string,
-"exclaims" it by capitalizing it and suffixing an exclamation mark.
-The `String.capitalize_ascii` function may be helpful here. For
-example, you should get the following behavior:
-
-   # exclaim "hello" ;;
-   - : string = "Hello!"
-   # exclaim "Ciao" ;;
-   - : string = "Ciao!"
-   # exclaim "what's up" ;;
-   - : string = "What's up!"
-......................................................................*)
-
-let exclaim (text : string) : string =
-  (String.capitalize_ascii text) ^ "!" ;;
-
-(*......................................................................
-Exercise 9: Define a function, `small_bills`, that determines, given a
-price, if one will need a bill smaller than a 20 to pay for the
-item. For instance, a price of 100 can be paid for with 20s (and
-larger denominations) alone, but a price of 105 will require a bill
-smaller than a 20 (for the 5 left over after the 100 is paid). We will
-assume (perhaps unrealistically) that all prices are given as integers
-and (more realistically) that 50s, 100s, and larger denomination bills
-are not available, only 1s, 5s, 10s, and 20s. In addition, you may
-assume all prices given are non-negative.
-
-   # small_bills 105 ;;
-   - : bool = true
-   # small_bills 100 ;;
-   - : bool = false
-   # small_bills 150 ;;
-   - : bool = true
-......................................................................*)
-
-let small_bills (price : int) : bool =
-  let cutoff_size = 20 in
-  (price mod cutoff_size) <> 0 ;;
-
+let minutes_spent_on_pset () : int = 360 ;;
 
 
 (*......................................................................
-Exercise 10:
-
-The calculation of the date of Easter, a calculation so important to
-early Christianity that it was referred to simply by the Latin
-"computus" ("the computation"), has been the subject of innumerable
-algorithms since the early history of the Christian church.
-
-The algorithm to calculate the computus function is given in Problem
-31 in the textbook, which you'll want to refer to.
-
-Write two functions that, given a year, calculate the month
-(`computus_month`) and day (`computus_day`) of Easter in that year via
-the Computus function.
-
-In 2018, Easter took place on April 1st. Your functions should reflect
-that:
-
-   # computus_month 2018;;
-   - : int = 4
-   # computus_day 2018 ;;
-   - : int = 1
+It's worth reflecting on the work you did on this problem set. Where
+did you run into problems and how did you end up resolving them? What
+might you have done in retrospect that would have allowed you to
+generate as good a submission in less time? Please provide us your
+thoughts on these questions and any other reflections in the string
+below.
 ......................................................................*)
 
-
-let computus_common (year : int) : int =
-  let a = year mod 19 in
-  let b = year / 100 in
-  let c = year mod 100 in
-  let d = b / 4 in
-  let e = b mod 4 in
-  let f = (b + 8) / 25 in
-  let g = (b - f + 1) / 3 in
-  let h = (19 * a + b - d - g + 15) mod 30 in
-  let i = c / 4 in
-  let k = c mod 4 in
-  let l = (32 + 2 * e + 2 * i - h - k) mod 7 in
-  let m = (a + 11 * h + 22 * l) / 451 in
-  h + l - 7 * m + 114 ;;
-
-
-
-let computus_month (year : int) : int =
-  (computus_common year) / 31 ;;
-
-let computus_day (year : int) =
-  (computus_common year) mod 31 + 1 ;;
-
-
-
-(*======================================================================
-Part 4: Code review
-
-A frustrum (see Figure 6.3 in the textbook) is a three-dimensional
-solid formed by slicing off the top of a cone parallel to its
-base. The formula for the volume of a frustrum in terms of its radii
-and height is given in the textbook as well.
-
-As an experienced programmer at Frustromco, Inc., you've been assigned
-to mentor a beginning programmer. Your mentee has been given the task
-of implementing a function `frustrum_volume` to calculate the volume
-of a frustrum. Here is your mentee's stab at this task:
-
-(* frustrum_volume -- calculate the frustrum *)
-let frustrum_volume a b c =
-  let a =
-  let s a = a * a in
-  let h = b in 3.1416
-  *. h /. float_of_int 3*. (a *.
-  a +. c  *.  c+.a *. c) in a
-;;
-
-As this neophyte programmer's mentor, you're asked to perform a code
-review on this code. You test the code out on an example -- a frustrum
-with radii 3 and 4 and height 4 -- and you get
-
-   # frustrum_volume 3. 4. 4. ;;
-   - : float = 154.985599999999977
-
-which is (more or less) the right answer. Nonetheless, you have a
-strong sense that the code can be considerably improved. *)
-
-(*......................................................................
-Exercise 11: Go over the code with your lab partner, making whatever
-modifications you think can improve the code, placing your revised
-version just below. Once you've converged on a version of the code
-that you think is best, call over a staff member and go over your
-revised code together.
-......................................................................*)
-
-(*** Place your revised version here within this comment. ***)
-
-(* During the code review, your boss drops by and looks over your
-proposed code. Your boss thinks that the function should be compatible
-with the header line given at <https://url.cs51.io/frustrum>. You
-agree.
-
-........................................................................
-Exercise 12: Revise your code (if necessary) to make sure that it uses
-the header line given at <https://url.cs51.io/frustrum>.
-......................................................................*)
-
-
-let frustrum_volume (radius1 : float)
-                    (radius2 : float)
-                    (height : float)
-                  : float =
-  (Float.pi *. height /. 3.)
-  *. (radius1 ** 2. +. radius1 *. radius2 +. radius2 ** 2.) ;;
-
-(*======================================================================
-Part 5: Utilizing recursion
-
-........................................................................
-Exercise 13: The factorial function takes the product of an integer
-and all the integers below it. It is generally notated as !. For
-example, 4! = 4 * 3 * 2 * 1. Write a function, `factorial`, that
-calculates the factorial of its integer argument. Note: the factorial
-function is generally only defined on non-negative integers (0, 1, 2,
-3, ...). For the purpose of this exercise, you may assume all inputs
-will be non-negative.
-
-For example,
-
-   # factorial 4 ;;
-   - : int = 24
-   # factorial 0 ;;
-   - : int = 1
-......................................................................*)
-
-let rec factorial (x : int) =
-  if x = 0 then 1
-  else x * factorial (x - 1) ;;
-
-
-(*......................................................................
-Exercise 14: Define a recursive function `sum_from_zero` that sums all
-the integers between 0 and its argument, inclusive.
-
-   # sum_from_zero 5 ;;
-   - : int = 15
-   # sum_from_zero 100 ;;
-   - : int = 5050
-   # sum_from_zero ~-3 ;;
-   - : int = -6
-
-(The sum from 0 to 100 was famously if apocryphally performed by
-the mathematician Carl Friedrich Gauss as a seven-year-old, *in his
-head*!)
-......................................................................*)
-
-
-
-let rec sum_from_zero (x : int) : int =
-  if x = 0 then 0
-  else if x < 0 then x + sum_from_zero (succ x)
-  else x + sum_from_zero (pred x) ;;
-
+let reflection () : string =
+  "recursion has become so much easier for me to understand.
+  I now get why people say that OCaml syntax makes it simple to easily implement" ;;
